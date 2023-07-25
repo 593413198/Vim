@@ -14,6 +14,8 @@ class StatusBarImpl implements vscode.Disposable {
 
   private previousMode: Mode | undefined = undefined;
   private showingDefaultMessage = true;
+  private showingAlpha: string | undefined = '';
+  private showingEnable: boolean | undefined = true;
 
   public lastMessageTime: Date | undefined;
 
@@ -33,6 +35,8 @@ class StatusBarImpl implements vscode.Disposable {
     );
     this.recordedStateStatusBarItem.name = 'Vim Pending Command Keys';
     this.recordedStateStatusBarItem.show();
+    this.showingAlpha = configuration.getConfiguration('vim').get('alpha');
+    this.showingEnable = configuration.getConfiguration('vim').get('modeEnable');
   }
 
   dispose() {
@@ -122,6 +126,8 @@ class StatusBarImpl implements vscode.Disposable {
   }
 
   private updateColor(mode: Mode) {
+    if (!this.showingEnable) return;
+
     let foreground: string | undefined;
     let background: string | undefined;
 
@@ -145,18 +151,26 @@ class StatusBarImpl implements vscode.Disposable {
 
     // If colors are undefined, return to VSCode defaults
     if (background !== undefined) {
-      colorCustomizations['statusBar.background'] = background;
-      colorCustomizations['statusBar.noFolderBackground'] = background;
-      colorCustomizations['statusBar.debuggingBackground'] = background;
+      colorCustomizations['statusBar.background'] = background + this.showingAlpha;
+      colorCustomizations['statusBarItem.remoteBackground'] = background;
+      // colorCustomizations['statusBar.noFolderBackground'] = background;
+      // colorCustomizations['statusBar.debuggingBackground'] = background;
     }
 
     if (foreground !== undefined) {
       colorCustomizations['statusBar.foreground'] = foreground;
-      colorCustomizations['statusBar.debuggingForeground'] = foreground;
+      // colorCustomizations['statusBar.debuggingForeground'] = foreground;
     }
 
+    const color = colorToSet + this.showingAlpha;
+    colorCustomizations['editor.lineHighlightBackground'] = color;
+    colorCustomizations['editor.lineHighlightBorder'] = color;
+    colorCustomizations['editorLineNumber.activeForeground'] = colorToSet;
+    colorCustomizations['editor.selectionBackground'] = color;
+    // colorCustomizations["editorCursor.foreground"] = color;
+
     if (currentColorCustomizations !== colorCustomizations) {
-      workbenchConfiguration.update('colorCustomizations', colorCustomizations, true);
+      workbenchConfiguration.update('colorCustomizations', colorCustomizations);
     }
   }
 }
